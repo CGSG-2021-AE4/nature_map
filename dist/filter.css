@@ -1,0 +1,101 @@
+:root {
+  --hover-shadow-color: #d3d3d378;
+}
+.filter {
+  /*border: 1px dashed red;*/
+
+  &.rowFlex {
+    display: flex;
+    flex-direction: row;
+  }
+
+  &.columnFlex {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  &.filterList {
+    margin: 0.5em;
+    max-width: 35em;
+  }
+
+  &.filterFrame {
+    margin: 0.5em;
+    display: flex;
+    flex-direction: row;
+    padding: 0.2em;
+    border: 0.16em dashed gray;
+    border-radius: 0.5em;
+  }
+
+  &[type = 'text'] {
+    border-radius: 0.5em;
+    border: 1px solid black;
+    padding-left: 0.5em;
+  }
+  
+  &.mainPart {
+    flex: 1;
+    display: flex;
+  }
+  
+  &.sidePart {
+    flex: 0;
+  }
+
+  &.deleteButton {
+    border: none;
+    border-radius: 30%;
+    background: url(bin/imgs/icons/delete.png) no-repeat;
+    background-size: 1.7em;
+    background-position: center;
+    width: 2em;
+    height: 2em;
+    transition: background-color 0.1s;
+    &:hover {
+      background-color: var(--hover-shadow-color);
+    }
+  }
+
+  &.saveButton {
+    border: none;
+    border-radius: 30%;
+    background: url(bin/imgs/icons/check.png) no-repeat;
+    background-size: 1.7em;
+    background-position: center;
+    width: 2em;
+    height: 2em;
+    transition: background-color 0.1s;
+    &:hover {
+      background-color: var(--hover-shadow-color);
+    }
+  }
+
+  &.editButton {
+    border: none;
+    border-radius: 30%;
+    background: url(bin/imgs/icons/edit.png) no-repeat;
+    background-size: 1.7em;
+    background-position: center;
+    width: 2em;
+    height: 2em;
+    transition: background-color 0.1s;
+    &:hover {
+      background-color: var(--hover-shadow-color);
+    }
+  }
+
+  &.addButton {
+    border: none;
+    border-radius: 30%;
+    background: url(bin/imgs/icons/add.png) no-repeat;
+    background-size: 1.7em;
+    background-position: center;
+    width: 2em;
+    height: 2em;
+    transition: background-color 0.1s;
+    &:hover {
+      background-color: var(--hover-shadow-color);
+    }
+  }
+}

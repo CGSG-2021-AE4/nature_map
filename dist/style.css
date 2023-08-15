@@ -1,0 +1,41 @@
+@import "../node_modules/ol/ol.css";
+
+html {
+  padding: 0px;
+  margin: 0px;
+  height: 100%;
+} 
+
+body {
+  padding: 0px;
+  margin: 0px;
+  height: 100%;
+  border: 4px dashed gold;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+#map-container {
+  flex: 1;
+  margin: 0.5em;
+  border: 4px dashed red;
+
+}
+
+p {
+  margin: 0;
+  align-self: center;
+  padding-left: 0.5em;
+}
+
+h1 {
+  padding-left: 1em;
+  margin: 0;
+}
+
+h2 {
+  padding-left: 0.7em;
+  margin: 0;
+}
+
