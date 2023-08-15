@@ -1,7 +1,7 @@
 import Map from 'ol/Map.js';
 import View from 'ol/View.js';
 
-import { createMapLayer, createRequestLayer, createMarkersLayer } from './layers.js';
+import { Layer, LayerMap, creatIconStyle } from './layers.js';
 
 
 import { createRoot } from 'react-dom/client';
@@ -10,24 +10,16 @@ import { FilterList } from "./components/filter_list";
 
 var layers = [];
 
-const MapLayer = createMapLayer();
+const MapLayer = new Layer;
 layers.push(MapLayer);
 
 var RequestLayer = undefined; //createRequestLayer('publishingCountry=US&year=2000,2030');
 
 //layers.push(RequestLayer);
 
-layers.push(createMarkersLayer([[3370533.758063, 8387091.147105]]));
+layers.push(new Layer([[3370533.758063, 8387091.147105]], creatIconStyle([0.5, 0.5], 0.05, './bin/imgs/cross_mark.png')));
 
-const map = new Map({
-  target: 'map-container',
-  layers: layers,
-  view: new View({
-    center: [3370533.758063, 8387091.147105],
-    //center: [0, 0],
-    zoom: 7
-    }),
-});
+const map = new LayerMap('map-container', [3370533.758063, 8387091.147105], 7, layers);
 
 var filterList = new FilterList;
 
@@ -38,7 +30,7 @@ document.getElementById('submitRequestButton').onclick = ()=>{
     var reqStr = filterList.getRequestStr();
     
     console.log(reqStr);
-    RequestLayer = createRequestLayer(reqStr);
+    RequestLayer = new Layer(reqStr);
     map.addLayer(RequestLayer);
 };
 
