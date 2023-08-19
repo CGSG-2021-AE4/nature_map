@@ -31,7 +31,7 @@ export class Layer {
 
   imageLayerFromRequest = ( reqStr: string )=>{
     // Variables for create request layer function
-    const pixel_ratio = window.devicePixelRatio || 1;
+    const pixel_ratio = 1;//window.devicePixelRatio || 1;
     var tile_grid_16 = createXYZ({
       minZoom: 0,
       maxZoom: 15,
@@ -79,7 +79,7 @@ export class LayerMap {
   map;
 
   constructor( target: string, viewCenter, viewZoom, layers: Layer[] = [] ) {
-    const map = new Map({
+    this.map = new Map({
       target: target,
       layers: layers.map(e=>{ return e.layer; }),
       view: new View({
@@ -87,14 +87,18 @@ export class LayerMap {
         zoom: viewZoom
       }),
     });  
+    console.log('MAP CREATION');
+    console.log(this);
   } /* End of 'constructor' function */
 
   addLayer = ( layer: Layer )=>{
     this.map.addLayer(layer.layer);
+    console.log(this);
   }; /* End of 'addLayer' function  */
   
   removeLayer = ( layer: Layer )=>{
     this.map.removeLayer(layer.layer);
+    console.log(this);
   }; /* End of 'removeLayer' function  */
 
 } /* End of 'LayerMap' class */

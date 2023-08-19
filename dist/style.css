@@ -10,6 +10,9 @@ body {
   padding: 0px;
   margin: 0px;
   height: 100%;
+  max-height: 100%;
+  width: 100%;
+  max-width: 100%;
   border: 4px dashed gold;
   box-sizing: border-box;
   display: flex;
@@ -39,3 +42,23 @@ h2 {
   margin: 0;
 }
 
+.lined {
+  border: 4px dashed lightsalmon;
+
+}
+
+.gaped {
+  margin: 8px;
+}
+
+.padded {
+  padding: 8px;
+}
+
+.description {
+  font-size: 0.7em;
+}
+
+div {
+  border-radius: 8px;
+}
