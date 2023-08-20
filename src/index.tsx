@@ -12,7 +12,7 @@ import { createRoot } from 'react-dom/client';
 import { comp, renderC } from './components/comp';
 //import { DndProvider, useDrag, useDrop} from 'react-dnd';
 //import { HTML5Backend } from 'react-dnd-html5-backend';
-import { Search } from './components/name_search.js';
+import { Search } from './components/search';
 
 // Map part
 
@@ -36,9 +36,7 @@ const a = (<Search chooseItemCallBack={(e)=>{
 
   var reqStr = 'taxonKey=' + e.key;
   
-  console.log(reqStr);
   RequestLayer = new Layer(reqStr);
-  console.log(RequestLayer);
   map.addLayer(RequestLayer);
 }}/>);
 

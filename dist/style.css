@@ -23,7 +23,10 @@ body {
   flex: 1;
   margin: 0.5em;
   border: 4px dashed red;
+}
 
+body {
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 p {
@@ -42,10 +45,47 @@ h2 {
   margin: 0;
 }
 
-.lined {
-  border: 4px dashed lightsalmon;
-
+h3 {
+  padding-left: 0.7em;
+  margin: 0;
 }
+
+.lined {
+  border: 4px solid red;
+}
+
+.dashedS {
+  border: 4px dashed lightsalmon;
+}
+
+.dashedG {
+  border: 4px dashed lightgreen;
+}
+
+.dashedC {
+  border: 4px dashed lightcoral;
+}
+
+.dashedB {
+  border: 4px dashed lightskyblue;
+}
+
+.solidS {
+  border: 4px solid lightsalmon;
+}
+
+.solidG {
+  border: 4px solid lightgreen;
+}
+
+.solidC {
+  border: 4px solid lightcoral;
+}
+
+.solidB {
+  border: 4px solid lightskyblue;
+}
+
 
 .gaped {
   margin: 8px;
@@ -59,6 +99,107 @@ h2 {
   font-size: 0.7em;
 }
 
-div {
-  border-radius: 8px;
+.flexRow {
+  display: flex;
+  flex-direction: row;
 }
+
+.flexColumn {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex2 {
+  flex: 2;
+}
+
+.flex1 {
+  flex: 1;
+}
+
+.flex0 {
+  flex: 0;
+}
+
+.rounded {
+  border-radius: 0.5em;
+}
+
+.deleteButton {
+  border: none;
+  border-radius: 30%;
+  background: url(bin/imgs/icons/delete.png) no-repeat;
+  background-size: 1.7em;
+  background-position: center;
+  width: 2em;
+  height: 2em;
+  transition: background-color 0.1s;
+  &:hover {
+    background-color: var(--hover-shadow-color);
+  }
+}
+
+.saveButton {
+  border: none;
+  border-radius: 30%;
+  background: url(bin/imgs/icons/check.png) no-repeat;
+  background-size: 1.7em;
+  background-position: center;
+  width: 2em;
+  height: 2em;
+  transition: background-color 0.1s;
+  &:hover {
+    background-color: var(--hover-shadow-color);
+  }
+}
+
+.editButton {
+  border: none;
+  border-radius: 30%;
+  background: url(bin/imgs/icons/edit.png) no-repeat;
+  background-size: 1.7em;
+  background-position: center;
+  width: 2em;
+  height: 2em;
+  transition: background-color 0.1s;
+  &:hover {
+    background-color: var(--hover-shadow-color);
+  }
+}
+
+.addButton {
+  border: none;
+  border-radius: 30%;
+  background: url(bin/imgs/icons/add.png) no-repeat;
+  background-size: 1.7em;
+  background-position: center;
+  width: 2em;
+  height: 2em;
+  transition: background-color 0.1s;
+  &:hover {
+    background-color: var(--hover-shadow-color);
+  }
+}
+
+.hideButton {
+  border: none;
+  border-radius: 30%;
+  background: url(bin/imgs/icons/hidden.png) no-repeat;
+  background-size: 1.7em;
+  background-position: center;
+  transform: rotate(-90deg);
+  
+  width: 2em;
+  height: 2em;
+  transition: background-color 0.1s;
+  transition: transform 0.1s;
+
+  &:hover {
+    background-color: var(--hover-shadow-color);
+  }
+
+  &.show {
+    transform: rotate(-180deg);
+  }
+}
+
