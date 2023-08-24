@@ -3,20 +3,27 @@
   <head>
     <meta charset="utf-8" />
     <title>Nature map</title>
-    <link rel="stylesheet" type="text/css" href="./style.css"/>
-    <link rel="stylesheet" type="text/css" href="./filter.css"/>
+    <link rel="stylesheet" type="text/css" href="./bin/css/style.css"/>
+    <!--<link rel="stylesheet" type="text/css" href="./filter.css"/>-->
     <link href="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.3.0/css/ol.css" rel="stylesheet"/>
   </head>
   <body>
+    <div id="layer0" class="globalP fullSize flexBox" style="z-index: 0">
+      <div id="map-container" class="flex1"></div>
+    </div>
+    <div id="layer1" class="globalP fullMaxSize flexBox" style="z-index: 1">
+      <div id="searchList"></div>
+    </div>  
+    <!--
     <div style="display: flex; flex-direction: row; flex: 1; max-height: 100%;">
       <div style="display: flex; flex-direction: column; flex: 1; max-height: 100%;">
         <div id="requestList1" style="display: flex; flex-direction: column; flex: 1; max-height: 100%;"></div>
-        <!--<input type="button" id="submitRequestButton" value='Show'/>
-        <div id="map-container"></div>-->
+        <! --<input type="button" id="submitRequestButton" value='Show'/>
+        -- >
       </div>
       <div id="requestList2" style="flex: 2.5; max-height: 100%;"></div>
-      <script type="module" src="bundle.js"></script>
-    </div>
-    
+      
+    </div>-->
+    <script type="module" src="bundle.js"></script>
   </body>
 </html>

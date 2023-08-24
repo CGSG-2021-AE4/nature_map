@@ -25,10 +25,10 @@ var RequestLayer = undefined; //createRequestLayer('publishingCountry=US&year=20
 
 layers.push(new Layer([[3370533.758063, 8387091.147105]], creatIconStyle([0.5, 0.5], 0.05, './bin/imgs/cross_mark.png')));
 
-const map = new LayerMap('requestList2', [3370533.758063, 8387091.147105], 7, layers);
+const map = new LayerMap('map-container', [3370533.758063, 8387091.147105], 7, layers);
 
 // Search part 
-const a = (<Search chooseItemCallBack={(e)=>{
+const searchList = (<Search chooseItemCallBack={(e)=>{
   console.log('Focused on ' + e.key);
   
   if (RequestLayer != undefined)
@@ -40,7 +40,7 @@ const a = (<Search chooseItemCallBack={(e)=>{
   map.addLayer(RequestLayer);
 }}/>);
 
-renderC('requestList1', a);
+renderC('searchList', searchList);
 
 
 

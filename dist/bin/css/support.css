@@ -1,0 +1,15 @@
+.hidden {
+  user-select: none;
+  background: var(--shadow-color);
+  
+}
+
+.hiddenHeader {
+  &.showed {
+    background: var(--shadow-color);
+  }
+
+  &:hover {
+    background: var(--shadow-color);
+  }
+}

@@ -249,8 +249,8 @@ export class Search extends React.Component<SearchProps, SearchState> {
 
   render() {
     return (
-      <div style={{ minWidth: '30em', maxHeight: '100%', flex: 1, display: 'flex', flexDirection: 'column'}}>
-        <div className="rounded dashedG gaped padded flex0">
+      <div className="flex1 fullMaxSize flexColumn">
+        <div className="padded gaped flex0 mainBg border1"> {/* Settings box */}
           <h1>Search bar</h1>
           Type: <select value={this.state.searchType} onChange={(e)=>{
             this.setState({ searchType: e.target.value as ReqType, isSearched: false, searchResults: []});
@@ -269,9 +269,7 @@ export class Search extends React.Component<SearchProps, SearchState> {
             this.search();
           }}/>
         </div>
-        <div className="rounded dashedG gaped flex1" style={{
-          overflowY: 'auto',
-        }}>
+        <div className={`gaped flex1 mainBg ${this.state.isSearched ? "border1" : ""}`} style={{ overflowY: 'auto' }}> {/* Search box */}
           <div>
             {this.state.searchResults.length != 0 && this.state.searchResults.map((e, i)=>{
               return <NameSearchItem key={i} data={e} focusCallBack={this.itemFocusCallBack} setSearchCallBack={this.setSearchState}/>;

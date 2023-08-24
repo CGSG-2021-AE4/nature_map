@@ -1,0 +1,119 @@
+input[type=button] {
+  background-color:  var(--color3);
+  border: none;
+  margin: 0.2em;
+  padding-block: 0.3em;
+  padding-inline: 0.9em;
+  font-size: 0.9em;
+  color:white;
+
+  transition: all 0.1s 0.05s;
+
+  &:hover {
+    outline: 0.2em solid var(--color3);
+    background-color: white;
+    color: var(--color3);
+  }
+  
+  &:active {
+    background: var(--color5);
+    color: white;
+  }
+  
+  &.deleteButton {
+    margin: 0;
+    border: none;
+    border-radius: 30%;
+    background-color: transparent;
+    background: url(../../imgs/icons/delete.png) no-repeat;
+    background-size: 1.7em;
+    background-position: center;
+    width: 2em;
+    height: 2em;
+    &:hover {
+      outline: none;
+      background-color: var(--shadow-color);
+    }
+  }
+  
+  &.saveButton {
+    margin: 0;
+    border: none;
+    border-radius: 30%;
+    background-color: transparent;
+    background: url(../../imgs/icons/check.png) no-repeat;
+    background-size: 1.7em;
+    background-position: center;
+    width: 2em;
+    height: 2em;
+    &:hover {
+      outline: none;
+      background-color: var(--shadow-color);
+    }
+  }
+  
+  &.editButton {
+    margin: 0;
+    border: none;
+    border-radius: 30%;
+    background-color: transparent;
+    background: url(../../imgs/icons/edit.png) no-repeat;
+    background-size: 1.7em;
+    background-position: center;
+    width: 2em;
+    height: 2em;
+    &:hover {
+      outline: none;
+      background-color: var(--shadow-color);
+    }
+  }
+  
+  &.addButton {
+    margin: 0;
+    border: none;
+    border-radius: 30%;
+    background-color: transparent;
+    background: url(../../imgs/icons/add.png) no-repeat;
+    background-size: 1.7em;
+    background-position: center;
+    width: 2em;
+    height: 2em;
+    &:hover {
+      outline: none;
+      background-color: var(--shadow-color);
+    }
+  }
+  
+  &.hideButton {
+    margin: 0;
+    border: none;
+    background: url(../../imgs/icons/hidden.png) no-repeat;
+    background-color: transparent;
+    background-size: 1.5em;
+    background-position: center;
+    transform: rotate(-90deg);
+    
+    width: 2em;
+    height: 2em;
+    transition: transform 0.1s;
+      
+    &:hover {
+      outline: none;
+    }
+
+    &.show {
+      transform: rotate(-180deg);
+    }
+  } 
+}
+
+
+hr {
+  margin: 1em 0;
+  padding: 0;
+  height: 0;
+  border: none;
+  border-top: 2px dashed var(--color3);
+}
+  
+

@@ -1,0 +1,50 @@
+.lined {
+  border: 4px solid red;
+}
+
+.dashedS {
+  border: 4px dashed lightsalmon;
+}
+
+.dashedG {
+  border: 4px dashed lightgreen;
+}
+
+.dashedC {
+  border: 4px dashed lightcoral;
+}
+
+.dashedB {
+  border: 4px dashed lightskyblue;
+}
+
+.solidS {
+  border: 4px solid lightsalmon;
+}
+
+.solidG {
+  border: 4px solid lightgreen;
+}
+
+.solidC {
+  border: 4px solid lightcoral;
+}
+
+.solidB {
+  border: 4px solid lightskyblue;
+}
+
+:root {
+  --color1: #5C7DDB;
+  --color2: #081742;
+  --color3: #5797A8;
+  --color4: #B3988A;
+  --color5: #DB755C;
+  --bg-main-color: #ffffff;
+  --bg-sub-color: #264055;
+  --sub-color: #6291a7;
+  --sub2-color:#61CE70;
+
+  --shadow-color: #02020218;
+  --lighting-color: #ffffff2a;
+}

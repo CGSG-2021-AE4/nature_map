@@ -19,12 +19,12 @@ export class Hidden extends React.Component<React.PropsWithChildren<HiddenProps>
 
   render() {
     return (
-      <div>
-        <div className="flexRow">
-          <h3 className="flex1" style={{ padding: 0 }}>{this.props.name}</h3>
-          <input type="button" className={this.state.isShow ? ' hideButton show' : 'hideButton'} onClick={(e)=>{
-            this.setState(prevState=>{ return { isShow: !prevState.isShow }; });
-          }}/>
+      <div className={`hidden ${this.state.isShow ? 'showed' : ''}`}>
+        <div className={`flexRow hiddenHeader ${this.state.isShow ? 'showed' : ''}`} onClick={(e)=>{
+          this.setState(prevState=>{ return { isShow: !prevState.isShow }; });
+        }}>
+          <h3 className="flex1" style={{ padding: '0.2em' }}>{this.props.name}</h3>
+          <input type="button" className={this.state.isShow ? ' hideButton show' : 'hideButton'}/>
         </div>
         {this.state.isShow && this.props.children}
       </div>

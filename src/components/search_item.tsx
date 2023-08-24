@@ -1,6 +1,6 @@
 import React from "react";
 import { Hidden } from "./hidden";
-import { Title } from "./support";
+import { Title, Value, ValueList, ValueProps } from "./support";
 
 enum ReqType {
   Match = 'Match',
@@ -29,26 +29,6 @@ export const taxonRanks = [
   TaxonRank.Class,
   TaxonRank.All,
 ];
-
-function getLowerRank( rank: TaxonRank ) {
-  switch (rank) {
-    case TaxonRank.Kingdom:
-      return TaxonRank.Phylum;
-    case TaxonRank.Phylum:
-      return TaxonRank.Class;
-    case TaxonRank.Class:
-      return TaxonRank.Order;
-    case TaxonRank.Order:
-      return TaxonRank.Family;
-    case TaxonRank.Family:
-      return TaxonRank.Genus;
-    case TaxonRank.Genus:
-      return TaxonRank.Species;
-    case TaxonRank.Species:
-    case TaxonRank.All:
-      return TaxonRank.All;
-  }
-}
 
 export interface WideTaxonData {
   key: number,
@@ -107,6 +87,47 @@ export interface TaxonData {
   class: string,
 }
 
+function getLowerRank( rank: TaxonRank ): TaxonRank {
+  switch (rank) {
+    case TaxonRank.Kingdom:
+      return TaxonRank.Phylum;
+    case TaxonRank.Phylum:
+      return TaxonRank.Class;
+    case TaxonRank.Class:
+      return TaxonRank.Order;
+    case TaxonRank.Order:
+      return TaxonRank.Family;
+    case TaxonRank.Family:
+      return TaxonRank.Genus;
+    case TaxonRank.Genus:
+      return TaxonRank.Species;
+    case TaxonRank.Species:
+    case TaxonRank.All:
+      return TaxonRank.All;
+  }
+}
+
+function getRankName( data: TaxonData, rank: TaxonRank ): string {
+  switch (rank) {
+    case TaxonRank.Kingdom:
+      return data.kingdom;
+    case TaxonRank.Phylum:
+      return data.phylum;
+    case TaxonRank.Class:
+      return data.class;
+    case TaxonRank.Order:
+      return data.order;
+    case TaxonRank.Family:
+      return data.family;
+    case TaxonRank.Genus:
+      return data.genus;
+    case TaxonRank.Species:
+      return data.species;
+    case TaxonRank.All:
+      return '';
+  }
+}
+
 interface ItemProps {
   data: TaxonData,
   focusCallBack: ( item: Item )=>void,
@@ -152,31 +173,41 @@ export class Item extends React.Component<ItemProps, ItemState> {
     else if (res.scientificName != undefined)
       this.setState({ name: res.scientificName });
   }
-
+  
   render() {
+    const details: ValueProps[] = [
+      { name: 'Rank', value: this.props.data.rank },
+      { name: 'Name', value: this.props.data.canonicalName },
+      { name: 'Sientific name', value: this.props.data.scientificName }
+    ];
+
+    if (this.props.data.rank != TaxonRank.Kingdom)
+      details.push({ name: 'Parents', value: '' });
+
+    var curRank = TaxonRank.Kingdom;
+
+    while (String(curRank) != TaxonRank.All && curRank != this.props.data.rank) {
+      const value = getRankName(this.props.data, curRank);
+      if (value != '')
+        details.push({
+          name: curRank,
+          value: getRankName(this.props.data, curRank),
+          paddingInd: 1,
+        });
+      curRank = getLowerRank(curRank);
+    }
+
     return (
       <div onClick={(e)=>{
         if ((e.target as HTMLElement).nodeName != 'INPUT')
           this.focus();
-      }} className={`rounded gaped ${this.state.isChosen ? 'solidC' : 'dashedG'}`}>
-        <Title title={this.state.name} description={String(this.props.data.key)}/>
+      }} className={`gaped ${this.state.isChosen ? 'border1Focus' : 'border1'}`}>
+        <Title title={this.props.data.rank + " - " + this.state.name} description={String(this.props.data.key)}/>
         <div className="gaped">
-          <Hidden name="Details">
-            <p>Canonical name: {  this.props.data.canonicalName}</p>
-            <p>Scientific name: { this.props.data.scientificName}</p>
-            <p>Rank: {            this.props.data.rank}</p>
-            <p>Path:
-              {/* Sorry, I can't without SHIT */}
-                                                              <p style={{paddingLeft: '0.5em'}}>Kingdom: {this.props.data.kingdom}</p>
-              {this.props.data.rank != TaxonRank.Kingdom && <><p style={{paddingLeft: '1.0em'}}>Phylum: {this.props.data.phylum}</p>
-              {this.props.data.rank != TaxonRank.Phylum  && <><p style={{paddingLeft: '1.5em'}}>Order: {this.props.data.order}</p>
-              {this.props.data.rank != TaxonRank.Order   && <><p style={{paddingLeft: '2.0em'}}>Family: {this.props.data.family}</p>
-              {this.props.data.rank != TaxonRank.Family  && <><p style={{paddingLeft: '2.5em'}}>Genus: {this.props.data.genus}</p>
-              {this.props.data.rank != TaxonRank.Species && <><p style={{paddingLeft: '3.0em'}}>Species: {this.props.data.species}</p>
-              </>}</>}</>}</>}</>}
-            </p>
+          <Hidden name="Details"> 
+            <ValueList list={details}/>
           </Hidden>
-          <input type="button" value="See childs" onClick={()=>{
+          <input type="button" value="See children" onClick={()=>{
               this.props.setSearchCallBack(ReqType.Seach, {
                 q: '',
                 rank: getLowerRank(this.props.data.rank as TaxonRank),
