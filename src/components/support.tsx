@@ -1,3 +1,25 @@
+import React from "react";
+
+interface HiddenProps {
+  name: string
+}
+
+export function Hidden( props: React.PropsWithChildren<HiddenProps> ): JSX.Element {
+  const [isShow, setShow] = React.useState(false);
+
+  return (
+    <div className={`hidden ${isShow ? 'showed' : ''}`}>
+      <div className={`flexRow hiddenHeader ${isShow ? 'showed' : ''}`} onClick={(e)=>{
+        e.stopPropagation();
+        setShow(!isShow);
+      }}>
+        <h3 className="flex1" style={{ padding: '0.2em' }}>{props.name}</h3>
+        <input type="button" className={isShow ? ' hideButton show' : 'hideButton'}/>
+      </div>
+      {isShow && props.children}
+    </div>
+  );
+}
 
 interface TitleProps {
   title: string,
@@ -7,10 +29,15 @@ interface TitleProps {
 export function Title( props: TitleProps ): JSX.Element {
   return (
     <div style={{
-      paddingLeft: '0.5em'
+      paddingLeft: '0.5em',
+      overflow: 'hidden',
     }}>
       <h2 style={{
-        padding: 0
+        padding: 0,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        fontSize: '1.3em',
       }}>{props.title}</h2>
       {props.description != undefined && <p className="description" style={{ paddingLeft: '0.5em' }}>{props.description}</p>}
     </div>

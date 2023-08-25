@@ -1,6 +1,5 @@
 import React from "react";
-import { Hidden } from "./hidden";
-import { Title, Value, ValueList, ValueProps } from "./support";
+import { Hidden, Title, ValueList, ValueProps } from "./support";
 
 enum ReqType {
   Match = 'Match',
@@ -128,6 +127,32 @@ function getRankName( data: TaxonData, rank: TaxonRank ): string {
   }
 }
 
+export function getItemDetailsList( data: TaxonData ): ValueProps[] {
+  const details: ValueProps[] = [
+    { name: 'Rank', value: data.rank },
+    { name: 'Name', value: data.canonicalName },
+    { name: 'Sientific name', value: data.scientificName }
+  ];
+
+  if (data.rank != TaxonRank.Kingdom)
+    details.push({ name: 'Parents', value: '' });
+
+  var curRank = TaxonRank.Kingdom;
+
+  while (String(curRank) != TaxonRank.All && curRank != data.rank) {
+    const value = getRankName(data, curRank);
+    if (value != '')
+      details.push({
+        name: curRank,
+        value: getRankName(data, curRank),
+        paddingInd: 1,
+      });
+    curRank = getLowerRank(curRank);
+  }
+
+  return details;
+}
+
 interface ItemProps {
   data: TaxonData,
   focusCallBack: ( item: Item )=>void,
@@ -175,46 +200,29 @@ export class Item extends React.Component<ItemProps, ItemState> {
   }
   
   render() {
-    const details: ValueProps[] = [
-      { name: 'Rank', value: this.props.data.rank },
-      { name: 'Name', value: this.props.data.canonicalName },
-      { name: 'Sientific name', value: this.props.data.scientificName }
-    ];
-
-    if (this.props.data.rank != TaxonRank.Kingdom)
-      details.push({ name: 'Parents', value: '' });
-
-    var curRank = TaxonRank.Kingdom;
-
-    while (String(curRank) != TaxonRank.All && curRank != this.props.data.rank) {
-      const value = getRankName(this.props.data, curRank);
-      if (value != '')
-        details.push({
-          name: curRank,
-          value: getRankName(this.props.data, curRank),
-          paddingInd: 1,
-        });
-      curRank = getLowerRank(curRank);
-    }
-
+    const details = getItemDetailsList(this.props.data);
     return (
       <div onClick={(e)=>{
-        if ((e.target as HTMLElement).nodeName != 'INPUT')
+        console.log(e);
+        if ((e.target as HTMLElement).nodeName != 'INPUT' && (e.target as HTMLElement).onclick == undefined)
           this.focus();
-      }} className={`gaped ${this.state.isChosen ? 'border1Focus' : 'border1'}`}>
-        <Title title={this.props.data.rank + " - " + this.state.name} description={String(this.props.data.key)}/>
-        <div className="gaped">
-          <Hidden name="Details"> 
-            <ValueList list={details}/>
-          </Hidden>
-          <input type="button" value="See children" onClick={()=>{
+      }} className={`gapped padded ${this.state.isChosen ? 'border1Focus' : 'border1'}`}>
+        <div className="flexRow spaceBetween">
+          <Title title={this.props.data.rank + " - " + this.state.name} description={String(this.props.data.key)}/>
+          <div>
+            <input type="button" value="See children" onClick={(e)=>{
+              e.stopPropagation();
               this.props.setSearchCallBack(ReqType.Seach, {
                 q: '',
                 rank: getLowerRank(this.props.data.rank as TaxonRank),
                 higherTaxon: this.props.data,
               });
-            }}/>
+            }}/>  
+          </div>
         </div>
+        <Hidden name="Details"> 
+          <ValueList list={details}/>
+        </Hidden>
       </div>
     );
   }

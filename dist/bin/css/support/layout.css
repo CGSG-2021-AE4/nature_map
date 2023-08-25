@@ -1,8 +1,8 @@
-.gaped {
+.gapped {
   margin: 0.5em;
 }
 
-.gaped2 {
+.gapped2 {
   margin: 1em;
 }
 
@@ -21,11 +21,19 @@
 .flexRow {
   display: flex;
   flex-direction: row;
+  
+  &.spaceBetween {
+    justify-content: space-between;
+  }
 }
 
 .flexColumn {
   display: flex;
   flex-direction: column;
+
+  &.spaceBetween {
+    justify-content: space-between;
+  }
 }
 
 .flexBox {

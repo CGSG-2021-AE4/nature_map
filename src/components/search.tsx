@@ -1,6 +1,7 @@
 import React, { ReactComponentElement, ReactHTML, ReactPropTypes, createRef } from "react";
 import { NameSearchItem, taxonRanks, WideTaxonData, TaxonData, TaxonRank } from "./search_item";
-
+import { ValueList } from "./support";
+import { getItemDetailsList } from "./search_item";
 // Request types
 
 export enum ReqType {
@@ -10,12 +11,12 @@ export enum ReqType {
 }
 
 const reqTypes = [
-  ReqType.Match,
+  //ReqType.Match,
   ReqType.Seach,
   ReqType.LinkReq,
 ];
 
-const defReqTypeInd = 1;
+const defReqType = ReqType.Seach;
 
 // Data sets
 
@@ -40,6 +41,8 @@ interface SearchProps {
 }
 
 interface SearchState {
+  searchResultsCount: number,
+  searchResultsIsEnd: boolean,
   searchResults: TaxonData[],
   searchProps: {
     match: {
@@ -61,12 +64,18 @@ interface SearchState {
 
 export class Search extends React.Component<SearchProps, SearchState> {
   currentFocusItem: NameSearchItem;
+  curSearchOffset: number;
+  searchLimit: number;
   
   constructor( props: SearchProps ) {
     super(props);
     this.currentFocusItem = null;
+    this.curSearchOffset = 0;
+    this.searchLimit = 100;
     this.state = {
       searchResults: [],
+      searchResultsCount: 0,
+      searchResultsIsEnd: false,
       searchProps: {
         match: {
           nameRef: createRef(),
@@ -80,7 +89,7 @@ export class Search extends React.Component<SearchProps, SearchState> {
           linkRef: createRef(), 
         },
       },
-      searchType: reqTypes[defReqTypeInd],
+      searchType: defReqType,
       isSearched: false,
       chosenTaxon: null,
     }
@@ -122,6 +131,8 @@ export class Search extends React.Component<SearchProps, SearchState> {
         return `https://api.gbif.org/v1/species/search?${
           reqInData.dataset != '' ? 'dataset_key=' + reqInData.dataset + '&': ''}${
           reqInData.rank != 'ALL' ? 'rank=' + reqInData.rank + '&': ''}${
+          reqInData.offset != undefined ? 'offset=' + reqInData.offset + '&' : ''}${
+          reqInData.limit != undefined ? 'limit=' + reqInData.limit + '&' : ''}${
           reqInData.higherTaxonKey != null ? 'highertaxon_key=' + reqInData.higherTaxonKey + '&': ''}q=${reqInData.q}`;
       case ReqType.LinkReq:
         return reqInData.link;
@@ -133,13 +144,14 @@ export class Search extends React.Component<SearchProps, SearchState> {
   }
 
   clearSearch() {
+    this.curSearchOffset = 0;
     this.setState({
       isSearched: false,
       searchResults: [],
     });
   }
 
-  async search() {
+  async search( searchLimit?: number ) {
     var reqData;
     switch (this.state.searchType) {
       case ReqType.Match:
@@ -153,6 +165,8 @@ export class Search extends React.Component<SearchProps, SearchState> {
           q: this.state.searchProps.search.qRef.current.value,
           rank: this.state.searchProps.search.rankRef.current.value,
           dataset: datasets[this.state.searchProps.search.datasetRef.current.value].key,
+          offset: this.curSearchOffset,
+          limit: searchLimit != undefined ? searchLimit : this.searchLimit,
         };
         break;
       case ReqType.LinkReq:
@@ -163,8 +177,11 @@ export class Search extends React.Component<SearchProps, SearchState> {
     }
 
     const reqStr = await Search.makeReqStr(this.state.searchType, reqData);
+    const res = await Search.getJson(reqStr);
     this.setState({
-      searchResults: Search.makeSearchDataFromJson(this.state.searchType, await Search.getJson(reqStr)),
+      searchResults: [...this.state.searchResults, ...Search.makeSearchDataFromJson(this.state.searchType, res)],
+      searchResultsCount: res.count,
+      searchResultsIsEnd: res.endOfRecords,
       isSearched: true,
     });
   }
@@ -217,25 +234,23 @@ export class Search extends React.Component<SearchProps, SearchState> {
                   return (<option key={i} value={i}>{e.name} -- {e.discription}</option>);
                 })}
             </select> <br/>
-            {this.state.chosenTaxon != null &&
-              <>
-                <p>Higher taxon:</p>
-                <div style={{ paddingLeft: '1em', border: '1px solid grey' }}>
-                  <p>Name: {this.state.chosenTaxon.canonicalName}</p>
-                  <p>Key: {this.state.chosenTaxon.key}</p>
-                  <p>Rank: {this.state.chosenTaxon.rank}</p>
-                  <input type='button' className="deleteButton" onClick={()=>{
-                    this.setState({ chosenTaxon: null });
-                  }}/>
-                </div>
-              </>
-            }
             Name: <input ref={this.state.searchProps.search.qRef} type="text"/> <br/>
             Rank: <select ref={this.state.searchProps.search.rankRef}>
               {taxonRanks.map((e, i)=>{
                   return (<option key={i} value={e}>{e}</option>);
                 })}
             </select>
+            {this.state.chosenTaxon != null &&
+              <div className="border1 gapped">
+                <div className="flexRow spaceBetween shadowBg">
+                  <p>Higher taxon:</p>
+                  <input type='button' className="deleteButton" onClick={()=>{
+                    this.setState({ chosenTaxon: null });
+                  }}/>  
+                </div>
+                <ValueList list={getItemDetailsList(this.state.chosenTaxon)}></ValueList>
+              </div>
+            }
           </>
         );
       case ReqType.LinkReq:
@@ -250,8 +265,8 @@ export class Search extends React.Component<SearchProps, SearchState> {
   render() {
     return (
       <div className="flex1 fullMaxSize flexColumn">
-        <div className="padded gaped flex0 mainBg border1"> {/* Settings box */}
-          <h1>Search bar</h1>
+        <div className="padded gapped flex0 mainBg border1"> {/* Settings box */}
+          <h1>GBIF map</h1>
           Type: <select value={this.state.searchType} onChange={(e)=>{
             this.setState({ searchType: e.target.value as ReqType, isSearched: false, searchResults: []});
           }}>
@@ -259,22 +274,31 @@ export class Search extends React.Component<SearchProps, SearchState> {
               return (<option key={i} value={e}>{e}</option>);
             })}
           </select>
-          <div>
-            <hr/>
-            {this.renderSearchProps(this.state.searchType)}
-            <hr/>
-          </div>
+          <hr/>
+          {this.renderSearchProps(this.state.searchType)}
+          <hr/>
           <input type="button" value="search" onClick={()=>{
             this.clearSearch();
-            this.search();
+            // For quicker search
+            this.search(20);
+            this.search(80);
           }}/>
+          {this.state.isSearched && <>Found {this.state.searchResultsCount} results.</>}
         </div>
-        <div className={`gaped flex1 mainBg ${this.state.isSearched ? "border1" : ""}`} style={{ overflowY: 'auto' }}> {/* Search box */}
+        <div className={`gapped flex1 mainBg ${this.state.isSearched ? "border1" : ""}`} style={{ overflowY: 'auto' }}> {/* Search box */}
           <div>
-            {this.state.searchResults.length != 0 && this.state.searchResults.map((e, i)=>{
-              return <NameSearchItem key={i} data={e} focusCallBack={this.itemFocusCallBack} setSearchCallBack={this.setSearchState}/>;
-            })}
-            {(this.state.searchResults.length == 0 && this.state.isSearched) && <div className="rounded dashedC gaped flexColumn" style={{
+            {this.state.searchResults.length != 0 && <>
+              {this.state.searchResults.map((e, i)=>{
+                return <NameSearchItem key={i} data={e} focusCallBack={this.itemFocusCallBack} setSearchCallBack={this.setSearchState}/>;
+              })}
+              {this.state.searchResultsIsEnd == false && <div className="flexRow" style={{ margin: '0.6em' }}>
+                <input type="button" value="show more" className="gapped flex1" onClick={(e)=>{
+                  this.curSearchOffset += this.searchLimit;
+                  this.search();
+                }}/>
+              </div>}
+            </>}
+            {(this.state.searchResults.length == 0 && this.state.isSearched) && <div className="rounded dashedC gapped flexColumn" style={{
               alignItems: 'center'
             }}><h1 style={{ padding: 0 }}>No Results :/</h1></div>}
           </div>
