@@ -153,6 +153,16 @@ export function getItemDetailsList( data: TaxonData ): ValueProps[] {
   return details;
 }
 
+export async function getJson( url: string ) {
+  return fetch(url).then(res=>{ return res.json(); });
+}
+
+
+export async function getTaxonData( taxonKey: number ) {
+  return (await getJson(`https://api.gbif.org/v1/species/${taxonKey}`)) as TaxonData;
+}
+
+
 interface ItemProps {
   data: TaxonData,
   focusCallBack: ( item: Item )=>void,
@@ -184,12 +194,8 @@ export class Item extends React.Component<ItemProps, ItemState> {
     this.setState({isChosen: false});
   }
 
-  static async getJson( url: string ) {
-    return fetch(url).then(res=>{ return res.json(); });
-  }
-
   async setName() {
-    const res = await Item.getJson(`https://api.gbif.org/v1/species/${this.props.data.key}/name`);
+    const res = await getJson(`https://api.gbif.org/v1/species/${this.props.data.key}/name`);
     
     if (res.n != undefined)
       this.setState({ name: res.n });

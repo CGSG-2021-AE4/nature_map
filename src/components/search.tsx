@@ -1,17 +1,22 @@
 import React, { ReactComponentElement, ReactHTML, ReactPropTypes, createRef } from "react";
 import { NameSearchItem, taxonRanks, WideTaxonData, TaxonData, TaxonRank } from "./search_item";
 import { ValueList } from "./support";
-import { getItemDetailsList } from "./search_item";
+import { getItemDetailsList, getTaxonData } from "./search_item";
+
+function ObjToQuery( obj: any ): string {
+  return Object.keys(obj).map(function(k) {
+    return encodeURIComponent(k) + '=' + encodeURIComponent(obj[k])
+  }).join('&');
+}
+
 // Request types
 
 export enum ReqType {
-  Match = 'Match',
   Seach = 'Search',
   LinkReq = 'Link req',
 }
 
 const reqTypes = [
-  //ReqType.Match,
   ReqType.Seach,
   ReqType.LinkReq,
 ];
@@ -34,9 +39,24 @@ const datasets: { name: string , discription: string, key: string }[] = [
 ];
 const defaultDataSetInd = 0;
 
+// Search set data
+
+interface SearchTypeSearchSetData {
+  q: string,
+  rank: TaxonRank,
+  datasetKey: string,
+  higherTaxon: number | TaxonData,
+}
+
+interface SearchTypeByLinkSetData {
+  link: string,
+}
+
 // Component interfaces
 
 interface SearchProps {
+  //searchType: ReqType,
+  //startData
   chooseItemCallBack: ( itemInfo: TaxonData )=>void;
 }
 
@@ -45,9 +65,6 @@ interface SearchState {
   searchResultsIsEnd: boolean,
   searchResults: TaxonData[],
   searchProps: {
-    match: {
-      nameRef: React.MutableRefObject<any>,
-    },
     search: {
       qRef: React.MutableRefObject<any>,
       rankRef: React.MutableRefObject<any>,
@@ -60,7 +77,7 @@ interface SearchState {
   searchType: ReqType,
   isSearched: boolean,
   chosenTaxon: TaxonData,
-}
+}/* End of 'SearchState' interface */ 
 
 export class Search extends React.Component<SearchProps, SearchState> {
   currentFocusItem: NameSearchItem;
@@ -77,9 +94,6 @@ export class Search extends React.Component<SearchProps, SearchState> {
       searchResultsCount: 0,
       searchResultsIsEnd: false,
       searchProps: {
-        match: {
-          nameRef: createRef(),
-        },
         search: {
           qRef: createRef(),
           rankRef: createRef(),
@@ -93,7 +107,7 @@ export class Search extends React.Component<SearchProps, SearchState> {
       isSearched: false,
       chosenTaxon: null,
     }
-  }
+  } /* End of 'constructor' function */ 
 
   itemFocusCallBack = ( item: NameSearchItem )=>{
     if (this.currentFocusItem != null)
@@ -101,7 +115,7 @@ export class Search extends React.Component<SearchProps, SearchState> {
     
     this.props.chooseItemCallBack(item.props.data);
     this.currentFocusItem = item;
-  }
+  } /* End of 'itemFocusCallBack' function  */ 
 
   // Search part
 
@@ -111,22 +125,18 @@ export class Search extends React.Component<SearchProps, SearchState> {
       taxonData.key = taxonData.usageKey;
 
     return taxonData as TaxonData;
-  }
+  } /* End of 'makeTaxonDataFromJson' function */ 
 
   static makeSearchDataFromJson( type: ReqType, resJson: any ): TaxonData[] {
     switch (type) {
-      case ReqType.Match:
-        return [Search.makeTaxonDataFromJson(resJson)];
       case ReqType.Seach:
       case ReqType.LinkReq:
         return resJson.results.map(e=>{ return Search.makeTaxonDataFromJson(e)});
     }
-  }
+  } /* End of 'makeSearchDataFromJson' function */ 
 
   static async makeReqStr( type: ReqType, reqInData: any ) {
     switch (type) {
-      case ReqType.Match:
-        return `https://api.gbif.org/v1/species/match?name=${reqInData.name}`;
       case ReqType.Seach:
         return `https://api.gbif.org/v1/species/search?${
           reqInData.dataset != '' ? 'dataset_key=' + reqInData.dataset + '&': ''}${
@@ -137,11 +147,11 @@ export class Search extends React.Component<SearchProps, SearchState> {
       case ReqType.LinkReq:
         return reqInData.link;
     }
-  }
+  } /* End of 'makeReqStr' function */ 
 
   static async getJson( url: string ) {
     return fetch(url).then(res=>{ return res.json(); });
-  }
+  } /* End of 'getJson' function */ 
 
   clearSearch() {
     this.curSearchOffset = 0;
@@ -149,22 +159,47 @@ export class Search extends React.Component<SearchProps, SearchState> {
       isSearched: false,
       searchResults: [],
     });
-  }
+  } /* End of 'clearSearch' function */ 
+
+  updateHistoryState() {
+    var setData = null;
+
+    switch (this.state.searchType) {
+      case ReqType.Seach:
+        setData = {
+          q: this.state.searchProps.search.qRef.current.value,
+          rank: this.state.searchProps.search.rankRef.current.value,
+          datasetKey: this.state.searchProps.search.datasetRef.current.value,
+          higherTaxon: this.state.chosenTaxon != null ? this.state.chosenTaxon.key : null,
+        } as SearchTypeSearchSetData;
+        break;
+      case ReqType.LinkReq:
+        setData = {
+          link: this.state.searchProps.linkReq.linkRef.current.value,
+        } as SearchTypeByLinkSetData;
+        break;
+    }
+
+    var state = {
+      type: this.state.searchType,
+      ...setData,
+    };
+    
+    history.pushState(state, '', '?' + ObjToQuery(state));
+    console.log(state);
+    console.log("?" + ObjToQuery(state));
+  } /* End of 'updateHistoryState' function */
 
   async search( searchLimit?: number ) {
     var reqData;
+
     switch (this.state.searchType) {
-      case ReqType.Match:
-        reqData = {
-          name: this.state.searchProps.match.nameRef.current.value
-        };
-        break;
       case ReqType.Seach:
         reqData = {
           higherTaxonKey: this.state.chosenTaxon != null ? this.state.chosenTaxon.key : null,
           q: this.state.searchProps.search.qRef.current.value,
           rank: this.state.searchProps.search.rankRef.current.value,
-          dataset: datasets[this.state.searchProps.search.datasetRef.current.value].key,
+          dataset: this.state.searchProps.search.datasetRef.current.value,
           offset: this.curSearchOffset,
           limit: searchLimit != undefined ? searchLimit : this.searchLimit,
         };
@@ -184,54 +219,56 @@ export class Search extends React.Component<SearchProps, SearchState> {
       searchResultsIsEnd: res.endOfRecords,
       isSearched: true,
     });
-  }
 
-  setSearchState = ( type: ReqType, props: any )=>{
+    this.updateHistoryState();
+  } /* End of 'search' function */
+
+  setSearchState =  async ( type: ReqType, inProps: SearchTypeSearchSetData | SearchTypeByLinkSetData )=>{
     var isSearched = false;
     if (type != this.state.searchType)
       this.setState({ searchType: type });
 
     this.clearSearch();
+    var props = null;
 
     switch (type) {
-      case ReqType.Match:
-        this.state.searchProps.match.nameRef.current.value = props.name != undefined ? props.name : ''; // Name
-        break;
       case ReqType.Seach:
-        this.state.searchProps.search.datasetRef.current.value = props.dataset != undefined ? props.dataset : 0;    // Dataset index
-        this.state.searchProps.search.qRef.current.value = props.q != undefined ? props.q : '';                     // Q
-        this.state.searchProps.search.rankRef.current.value = props.rank != undefined ? props.rank : TaxonRank.All as string; // Rank
+        props = inProps as SearchTypeSearchSetData;
+
+        this.state.searchProps.search.datasetRef.current.value = props.datasetKey != undefined ? props.datasetKey : datasets[defaultDataSetInd].key;    // Dataset index
+        this.state.searchProps.search.qRef.current.value = props.q;                     // Q
+        this.state.searchProps.search.rankRef.current.value = props.rank; // Rank
      
-        if (props.higherTaxon != undefined) {
+        if (props.higherTaxon != null) {
           isSearched = true;
-          this.setState({ chosenTaxon: props.higherTaxon }, ()=>{
-            this.search();
-          }); // Higher taxon
+          if (typeof props.higherTaxon == "number")
+            this.setState({ chosenTaxon: await getTaxonData(props.higherTaxon) }, ()=>{
+              this.search();
+            }); // Higher taxon
+          else
+            this.setState({ chosenTaxon: props.higherTaxon }, ()=>{
+              this.search();
+            }); // Higher taxon
         }
         break;
       case ReqType.LinkReq:
+        props = inProps as SearchTypeByLinkSetData;
         this.state.searchProps.linkReq.linkRef.current.value = props.link != undefined ? props.link : ''; // Link
         break;
     }
 
     if (!isSearched)
       this.search();
-  }
+  } /* End of 'setSearchState' function */
 
   renderSearchProps( type: ReqType ) {
     switch (type) {
-      case ReqType.Match:
-        return (
-          <>
-            Name: <input ref={this.state.searchProps.match.nameRef} type="text"/> <br/>
-          </>
-        );
       case ReqType.Seach:
         return (
           <>
             Dataset: <select ref={this.state.searchProps.search.datasetRef} >
               {datasets.map((e, i)=>{
-                  return (<option key={i} value={i}>{e.name} -- {e.discription}</option>);
+                  return (<option key={i} value={e.key}>{e.name} -- {e.discription}</option>);
                 })}
             </select> <br/>
             Name: <input ref={this.state.searchProps.search.qRef} type="text"/> <br/>
@@ -260,7 +297,7 @@ export class Search extends React.Component<SearchProps, SearchState> {
           </>
         );
     }
-  }
+  } /* End of 'renderSearch' function  */
 
   render() {
     return (
@@ -305,8 +342,37 @@ export class Search extends React.Component<SearchProps, SearchState> {
         </div>
       </div>
     );
+  } /* End of 'render' functoin */
+
+  componentDidMount() {
+    //this.setSearchState(ReqType.LinkReq, { link: 'asdfjkhasdkhjasdfkhj'});
+    if (window.location.search == '')
+      return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const type = urlParams.get('type') as ReqType;
+    var setSearchData = null;
+
+    switch (type) {
+      case ReqType.Seach:
+        setSearchData = {
+          q: urlParams.get('q'),
+          rank: urlParams.get('rank') as TaxonRank,
+          datasetKey: urlParams.get('datasetKey'),
+          higherTaxon: urlParams.get('higherTaxon') == 'null' ? null : parseInt(urlParams.get('higherTaxon')),
+        } as SearchTypeSearchSetData;
+        break;
+      case ReqType.LinkReq:
+        setSearchData = {
+          link: urlParams.get('link'),
+        } as SearchTypeByLinkSetData;
+        break;
+    }
+    console.log(setSearchData);
+    if (setSearchData != null)
+      this.setSearchState(type, setSearchData);
   }
-}
+} /* End of 'Search' class */ 
 
 
 /*
