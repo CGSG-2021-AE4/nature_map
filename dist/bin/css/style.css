@@ -111,3 +111,15 @@ h3 {
 .border1Focus {
   border: 0.2em solid var(--color5);
 }
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--shadow-color);
+}
+
+::-webkit-scrollbar-thumb {
+  box-shadow: var(--bg-main-color);
+}

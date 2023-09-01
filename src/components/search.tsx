@@ -1,6 +1,6 @@
 import React, { ReactComponentElement, ReactHTML, ReactPropTypes, createRef } from "react";
 import { NameSearchItem, taxonRanks, WideTaxonData, TaxonData, TaxonRank } from "./search_item";
-import { ValueList } from "./support";
+import { ValueList, ScrollBox } from "./support";
 import { getItemDetailsList, getTaxonData } from "./search_item";
 
 function ObjToQuery( obj: any ): string {
@@ -285,7 +285,9 @@ export class Search extends React.Component<SearchProps, SearchState> {
                     this.setState({ chosenTaxon: null });
                   }}/>  
                 </div>
-                <ValueList list={getItemDetailsList(this.state.chosenTaxon)}></ValueList>
+                <ScrollBox maxHeight={'15em'}>
+                  <ValueList list={getItemDetailsList(this.state.chosenTaxon)}></ValueList>
+                </ScrollBox>
               </div>
             }
           </>

@@ -70,3 +70,19 @@ export function Value( props: ValueProps ): JSX.Element {
 export function ValueList( props: { list: ValueProps[] } ) {
   return props.list.map((e, i)=>{ return (<Value {...e} ind={i}/>); });
 }
+
+export interface ScrollBoxProps {
+  maxHeight: string,
+}
+
+export function ScrollBox( props: React.PropsWithChildren<ScrollBoxProps> ): JSX.Element {
+  return (
+    <div style={{
+      maxHeight: props.maxHeight,
+      overflowY: 'scroll',
+    }}>
+      {props.children}
+    </div>
+  );
+}
+
