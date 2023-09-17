@@ -20,18 +20,24 @@ export function creatIconStyle( center: number[], scale: number, imgFile: string
   });
 } /* End of 'creatIconStyle' function */
 
+export function queryToStr( obj: any ): string {
+  return Object.keys(obj).map(function(k) {
+    return encodeURIComponent(k) + '=' + encodeURIComponent(obj[k])
+  }).join('&');
+}
+
 export class Layer {
   layer;
 
-  fromOSM = ()=> {
+  fromOSM() {
     this.layer = new TileLayer({
       source: new OSM(),
     });
   }; /* End of 'fromOSM' function */
 
-  imageLayerFromRequest = ( reqStr: string )=>{
+  tileLayer( sourceUrl: string, projection: string, query: any ) {
     // Variables for create request layer function
-    const pixel_ratio = 1;//window.devicePixelRatio || 1;
+    const pixel_ratio = Math.min(window.devicePixelRatio, 4) || 1;
     var tile_grid_16 = createXYZ({
       minZoom: 0,
       maxZoom: 15,
@@ -40,17 +46,17 @@ export class Layer {
 
     this.layer = new TileLayer({
       source: new TileImage({
-        projection: 'EPSG:3857',
+        projection: projection,
         tileGrid: tile_grid_16,
         tilePixelRatio: pixel_ratio,
-        url: 'https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@' + pixel_ratio + 'x.png?' + reqStr + '&style=fire.point',
+        url:sourceUrl + pixel_ratio + 'x.png?' + queryToStr(query),
         wrapX: true
       }),
     });
 
   }; /* End of 'imageLayerFromRequest' function */
 
-  markerLayer = ( markersCoords: Array<Array<number>>, style: Style )=>{
+  markerLayer( markersCoords: Array<Array<number>>, style: Style ) {
     this.layer = new VectorLayer({
       source: new VectorSource({
         features: markersCoords.map(e=>{
@@ -67,8 +73,8 @@ export class Layer {
   constructor( ...args ) {
     if (args.length == 0)
       this.fromOSM();
-    else if (args.length == 1)
-      this.imageLayerFromRequest(args[0]);
+    else if (args.length == 3)
+      this.tileLayer(args[0], args[1], args[2]);
     else if (args.length == 2)
       this.markerLayer(args[0], args[1]);
   } /* End of 'constructor' function */

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 interface HiddenProps {
   name: string
@@ -86,3 +86,73 @@ export function ScrollBox( props: React.PropsWithChildren<ScrollBoxProps> ): JSX
   );
 }
 
+export enum ButtonValueType {
+  ValueName = 'ValueName',
+  EnabledDisabled = 'EnabledDisabled',
+  ActivePassive = 'ActivePassive',
+  OnOff = 'OnOff',
+}
+
+interface PushButtonProps {
+  name: string,
+  value?: boolean,
+  onChange?: ( newValue: boolean)=>void,
+  valueType?: ButtonValueType,
+}
+
+interface PushButtonState {
+  value,
+}
+
+export class PushButton extends React.Component<PushButtonProps, PushButtonState> {
+  constructor( props: PushButtonProps ) {
+    super(props);
+
+    this.state = {
+      value: props.value != undefined ? props.value : false,
+    };
+  }
+
+  getValue(): boolean {
+    return this.state.value;
+  }
+
+  setValue( newValue: boolean ): void {
+    this.setState({ value: newValue });
+  }
+
+  getButtonValue() {
+    if (this.props.valueType == undefined)
+      return this.props.name;
+
+    switch (this.props.valueType) {
+      case ButtonValueType.ValueName:
+        return this.props.name;
+      case ButtonValueType.ActivePassive:
+        if (this.state.value)
+          return 'Active';
+        else
+          return 'Passive';
+      case ButtonValueType.EnabledDisabled:
+        if (this.state.value)
+          return 'Enable';
+        else
+          return 'Disable';
+      case ButtonValueType.OnOff:
+        if (this.state.value)
+          return 'On';
+        else
+          return 'Off';
+    }
+  }
+
+  render() {
+    return (
+      <input type="button" className={`${this.state.value ? 'active' : ''}`} value={this.getButtonValue()} onClick={()=>{
+        if (this.props.onChange != undefined)
+          this.props.onChange(!this.state.value);
+        this.setState({ value: !this.state.value });
+      }}/>
+    );
+  }
+}

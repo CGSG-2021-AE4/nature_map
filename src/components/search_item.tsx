@@ -30,60 +30,60 @@ export const taxonRanks = [
 ];
 
 export interface WideTaxonData {
-  key: number,
-  usageKey: number,
-  scientificName: string,
-  canonicalName: string,
-  rank: string,
-  status: string,
-  confidence: number,
-  matchType: string,
-  kingdom: string,
-  phylum: string,
-  order: string,
-  family: string,
-  genus: string,
-  species: string,
-  kingdomKey: number,
-  phylumKey: number,
-  classKey: number,
-  orderKey: number,
-  familyKey: number,
-  genusKey: number,
-  speciesKey: number,
-  synonym: boolean,
-  class: string,
+  key: number;
+  usageKey: number;
+  scientificName: string;
+  canonicalName: string;
+  rank: string;
+  status: string;
+  confidence: number;
+  matchType: string;
+  kingdom: string;
+  phylum: string;
+  order: string;
+  family: string;
+  genus: string;
+  species: string;
+  kingdomKey: number;
+  phylumKey: number;
+  classKey: number;
+  orderKey: number;
+  familyKey: number;
+  genusKey: number;
+  speciesKey: number;
+  synonym: boolean;
+  class: string;
 }
 
 export interface TaxonData {
   
   // Names
-  canonicalName: string,
-  scientificName: string,
-  kingdom: string,
-  phylum: string,
-  order: string,
-  family: string,
-  genus: string,
-  species: string,
+  canonicalName: string;
+  scientificName: string;
+  kingdom: string;
+  phylum: string;
+  order: string;
+  family: string;
+  genus: string;
+  species: string;
   
   // Keys
-  key: number,
-  kingdomKey: number,
-  phylumKey: number,
-  classKey: number,
-  orderKey: number,
-  familyKey: number,
-  genusKey: number,
-  speciesKey: number,
+  key: number;
+  kingdomKey: number;
+  phylumKey: number;
+  classKey: number;
+  orderKey: number;
+  familyKey: number;
+  genusKey: number;
+  speciesKey: number;
   
   // Other
-  rank: string,
-  status: string,
-  confidence: number,
-  matchType: string,
-  synonym: boolean,
-  class: string,
+  rank: string;
+  status: string;
+  confidence: number;
+  matchType: string;
+  synonym: boolean;
+  class: string;
 }
 
 function getLowerRank( rank: TaxonRank ): TaxonRank {
@@ -164,14 +164,14 @@ export async function getTaxonData( taxonKey: number ) {
 
 
 interface ItemProps {
-  data: TaxonData,
-  focusCallBack: ( item: Item )=>void,
-  setSearchCallBack?: ( type: ReqType, props: any )=>void
+  data: TaxonData;
+  focusCallBack: ( item: Item )=>void;
+  setSearchCallBack?: ( type: ReqType, props: any )=>void;
 }
 
 interface ItemState {
-  isChosen: boolean,
-  name: string
+  isChosen: boolean;
+  name: string;
 }
 
 export class Item extends React.Component<ItemProps, ItemState> {
@@ -180,7 +180,7 @@ export class Item extends React.Component<ItemProps, ItemState> {
     super(props);
     this.state = {
       isChosen: false,
-      name: props.data.rank + '::' + props.data.key
+      name: props.data.canonicalName
     };
     this.setName();
   }
@@ -195,6 +195,9 @@ export class Item extends React.Component<ItemProps, ItemState> {
   }
 
   async setName() {
+    if (this.state.name != '')
+      return;
+
     const res = await getJson(`https://api.gbif.org/v1/species/${this.props.data.key}/name`);
     
     if (res.n != undefined)

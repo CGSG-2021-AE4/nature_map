@@ -4,14 +4,7 @@ import View from 'ol/View.js';
 import { Layer, LayerMap, creatIconStyle } from './layers.js';
 
 
-import { createRoot } from 'react-dom/client';
-//import { FilterListC } from "./components/list";
-//import { FilterList } from "./components/filter_list";
-//import { Over } from './components/container';
-//import { DropList } from './components/drop_list';
-import { comp, renderC } from './components/comp';
-//import { DndProvider, useDrag, useDrop} from 'react-dnd';
-//import { HTML5Backend } from 'react-dnd-html5-backend';
+import { renderC } from './components/comp';
 import { Search } from './components/search';
 
 // Map part
@@ -28,19 +21,9 @@ layers.push(new Layer([[3370533.758063, 8387091.147105]], creatIconStyle([0.5, 0
 const map = new LayerMap('map-container', [3370533.758063, 8387091.147105], 7, layers);
 
 // Search part 
-const searchList = (<Search chooseItemCallBack={(e)=>{
-  console.log('Focused on ' + e.key);
-  
-  if (RequestLayer != undefined)
-    map.removeLayer(RequestLayer);
+const searchList = (<Search map={map}/>);
 
-  var reqStr = 'taxonKey=' + e.key;
-  
-  RequestLayer = new Layer(reqStr);
-  map.addLayer(RequestLayer);
-}}/>);
-
-renderC('searchList', searchList);
+renderC('layer1', searchList);
 
 
 

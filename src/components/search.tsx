@@ -2,12 +2,8 @@ import React, { ReactComponentElement, ReactHTML, ReactPropTypes, createRef } fr
 import { NameSearchItem, taxonRanks, WideTaxonData, TaxonData, TaxonRank } from "./search_item";
 import { ValueList, ScrollBox } from "./support";
 import { getItemDetailsList, getTaxonData } from "./search_item";
-
-function ObjToQuery( obj: any ): string {
-  return Object.keys(obj).map(function(k) {
-    return encodeURIComponent(k) + '=' + encodeURIComponent(obj[k])
-  }).join('&');
-}
+import { LayerMap, Layer, queryToStr } from "../layers";
+import { Settings, ValueType } from "./settings";
 
 // Request types
 
@@ -55,34 +51,50 @@ interface SearchTypeByLinkSetData {
 // Component interfaces
 
 interface SearchProps {
-  //searchType: ReqType,
-  //startData
-  chooseItemCallBack: ( itemInfo: TaxonData )=>void;
+  map: LayerMap;
 }
 
+var settingsValuesProps = {
+  enableLinkLog: { type: ValueType.Bool },
+  advancedMode: { type: ValueType.Bool },
+}
+
+interface SettingValues {
+  enableLinkLog: boolean,
+  advancedMode: boolean,
+}
+
+var settings: SettingValues = {
+  enableLinkLog: true,
+  advancedMode: true,
+};
+
 interface SearchState {
-  searchResultsCount: number,
-  searchResultsIsEnd: boolean,
-  searchResults: TaxonData[],
+  searchResultsCount: number;
+  searchResultsIsEnd: boolean;
+  searchResults: TaxonData[];
   searchProps: {
     search: {
-      qRef: React.MutableRefObject<any>,
-      rankRef: React.MutableRefObject<any>,
-      datasetRef: React.MutableRefObject<any>,
+      qRef: React.MutableRefObject<any>;
+      rankRef: React.MutableRefObject<any>;
+      datasetRef: React.MutableRefObject<any>;
     },
     linkReq: {
-      linkRef: React.MutableRefObject<any>, 
+      linkRef: React.MutableRefObject<any>;
     }
-  },
-  searchType: ReqType,
-  isSearched: boolean,
-  chosenTaxon: TaxonData,
+  };
+  searchType: ReqType;
+  isSearched: boolean;
+  chosenTaxon: TaxonData;
+  isShowSettings: boolean;
 }/* End of 'SearchState' interface */ 
 
 export class Search extends React.Component<SearchProps, SearchState> {
   currentFocusItem: NameSearchItem;
   curSearchOffset: number;
   searchLimit: number;
+  curShowLayer: Layer = null;
+  settings: { support: boolean } = { support: false };
   
   constructor( props: SearchProps ) {
     super(props);
@@ -106,14 +118,49 @@ export class Search extends React.Component<SearchProps, SearchState> {
       searchType: defReqType,
       isSearched: false,
       chosenTaxon: null,
+      isShowSettings: false,
     }
   } /* End of 'constructor' function */ 
+
+  async showItemLayer( data: TaxonData ) {
+    console.log('Focused on ' + data.key);
+  
+    if (this.curShowLayer != undefined)
+      this.props.map.removeLayer(this.curShowLayer);
+
+    const proj = 'EPSG:3857';
+    const dataSource = 'https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@';
+    const mapStyle = {
+      style: 'purpleYellow-noborder.poly',
+      bin: 'square',
+      squareSize: '8',
+    };
+    const req = {
+      taxonKey: data.key,
+    };
+
+    // Need to get dentisy
+    const count = await  Search.getJson('https://api.gbif.org/v1/occurrence/count?' + queryToStr({ ...req, }));
+    // const cap = await  Search.getJson('https://api.gbif.org/v2/map/occurrence/density/capabilities.json?' + queryToStr({ ...req, }));
+    // const area = (cap.maxLat - cap.minLat) * (cap.maxLng - cap.minLng);
+    // console.log('Search...');
+    // console.log('Count: ' + cap.total);
+    // console.log('Area:' + area);
+    // console.log('Density:' + cap.total / area);
+
+    // Simple tile sizing
+    if (count < 10000)
+      mapStyle.squareSize = '16';
+
+    this.curShowLayer = new Layer(dataSource, proj, { ...mapStyle, ...req });
+    this.props.map.addLayer(this.curShowLayer);
+  }
 
   itemFocusCallBack = ( item: NameSearchItem )=>{
     if (this.currentFocusItem != null)
       this.currentFocusItem.defocus();
     
-    this.props.chooseItemCallBack(item.props.data);
+    this.showItemLayer(item.props.data);
     this.currentFocusItem = item;
   } /* End of 'itemFocusCallBack' function  */ 
 
@@ -185,9 +232,7 @@ export class Search extends React.Component<SearchProps, SearchState> {
       ...setData,
     };
     
-    history.pushState(state, '', '?' + ObjToQuery(state));
-    console.log(state);
-    console.log("?" + ObjToQuery(state));
+    history.pushState(state, '', '?' + queryToStr(state));
   } /* End of 'updateHistoryState' function */
 
   async search( searchLimit?: number ) {
@@ -212,6 +257,8 @@ export class Search extends React.Component<SearchProps, SearchState> {
     }
 
     const reqStr = await Search.makeReqStr(this.state.searchType, reqData);
+    if (settings.enableLinkLog)
+      console.log("Search request: " + reqStr);
     const res = await Search.getJson(reqStr);
     this.setState({
       searchResults: [...this.state.searchResults, ...Search.makeSearchDataFromJson(this.state.searchType, res)],
@@ -303,46 +350,80 @@ export class Search extends React.Component<SearchProps, SearchState> {
 
   render() {
     return (
-      <div className="flex1 fullMaxSize flexColumn">
-        <div className="padded gapped flex0 mainBg border1"> {/* Settings box */}
-          <h1>GBIF map</h1>
-          Type: <select value={this.state.searchType} onChange={(e)=>{
-            this.setState({ searchType: e.target.value as ReqType, isSearched: false, searchResults: []});
-          }}>
-            {reqTypes.map((e, i)=>{
-              return (<option key={i} value={e}>{e}</option>);
-            })}
-          </select>
-          <hr/>
-          {this.renderSearchProps(this.state.searchType)}
-          <hr/>
-          <input type="button" value="search" onClick={()=>{
-            this.clearSearch();
-            // For quicker search
-            this.search(20);
-            this.search(80);
-          }}/>
-          {this.state.isSearched && <>Found {this.state.searchResultsCount} results.</>}
-        </div>
-        <div className={`gapped flex1 mainBg ${this.state.isSearched ? "border1" : ""}`} style={{ overflowY: 'auto' }}> {/* Search box */}
-          <div>
-            {this.state.searchResults.length != 0 && <>
-              {this.state.searchResults.map((e, i)=>{
-                return <NameSearchItem key={i} data={e} focusCallBack={this.itemFocusCallBack} setSearchCallBack={this.setSearchState}/>;
+      <>
+        <div className="flex0 fullMaxSize flexColumn" style={{
+          width: '30em',
+        }}>
+          <div className="padded gapped flex0 mainBg border1"> {/* Settings box */}
+            <h1>GBIF map</h1>
+            <input type="button" value="settings" onClick={()=>{
+              this.setState({ isShowSettings: true });
+            }}></input>
+            Type: <select value={this.state.searchType} onChange={(e)=>{
+              this.setState({ searchType: e.target.value as ReqType, isSearched: false, searchResults: []});
+            }}>
+              {reqTypes.map((e, i)=>{
+                return (<option key={i} value={e}>{e}</option>);
               })}
-              {this.state.searchResultsIsEnd == false && <div className="flexRow" style={{ margin: '0.6em' }}>
-                <input type="button" value="show more" className="gapped flex1" onClick={(e)=>{
-                  this.curSearchOffset += this.searchLimit;
-                  this.search();
-                }}/>
-              </div>}
-            </>}
-            {(this.state.searchResults.length == 0 && this.state.isSearched) && <div className="rounded dashedC gapped flexColumn" style={{
-              alignItems: 'center'
-            }}><h1 style={{ padding: 0 }}>No Results :/</h1></div>}
+            </select>
+            <hr/>
+            {this.renderSearchProps(this.state.searchType)}
+            <hr/>
+            <input type="button" value="search" onClick={()=>{
+              this.clearSearch();
+              // For quicker search
+              this.search(20);
+              if (!this.state.searchResultsIsEnd)
+              {
+                this.curSearchOffset += 20;
+                this.search(80);
+              }
+            }}/>
+            {this.state.isSearched && <>Found {this.state.searchResultsCount} results.</>}
+          </div>
+          <div className={`gapped flex1 mainBg ${this.state.isSearched ? "border1" : ""}`} style={{ overflowY: 'scroll' }}> {/* Search box */}
+            <div>
+              {this.state.searchResults.length != 0 && <>
+                {this.state.searchResults.map((e, i)=>{
+                  return <NameSearchItem key={i} data={e} focusCallBack={this.itemFocusCallBack} setSearchCallBack={this.setSearchState}/>;
+                })}
+                {this.state.searchResultsIsEnd == false && <div className="flexRow" style={{ margin: '0.6em' }}>
+                  <input type="button" value="show more" className="gapped flex1" onClick={(e)=>{
+                    this.curSearchOffset += this.searchLimit;
+                    this.search();
+                  }}/>
+                </div>}
+              </>}
+              {(this.state.searchResults.length == 0 && this.state.isSearched) && <div className="rounded dashedC gapped flexColumn" style={{
+                alignItems: 'center'
+              }}><h1 style={{ padding: 0 }}>No Results :/</h1></div>}
+            </div>
           </div>
         </div>
-      </div>
+        {this.state.isShowSettings && <div style={{
+          zIndex: 999,
+          position: 'fixed',
+
+          bottom: 0,
+          left: 0,
+          right: 0,
+          top: 0,
+
+          display: 'flex',
+          justifyContent: 'center',
+          flexWrap: 'wrap',
+          alignContent: 'center',
+          background: '#00000082'
+        }}>
+          <Settings<SettingValues> name="Settings" style={{ width: '20em'}} valuesProps={settingsValuesProps} values={settings} setSettingsCallBack={( newS: any )=>{
+            console.log("NEW SETTINGS ");
+            console.log(newS);
+            settings = newS;
+          }} closeCallBack={()=>{
+            this.setState({ isShowSettings: false });
+          }}/>
+        </div>}
+      </>
     );
   } /* End of 'render' functoin */
 

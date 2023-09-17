@@ -21,19 +21,19 @@
 .flexRow {
   display: flex;
   flex-direction: row;
-  
-  &.spaceBetween {
-    justify-content: space-between;
-  }
+}
+
+.spaceBetween {
+  justify-content: space-between;
+}
+
+.alignCenter {
+  align-items: center;
 }
 
 .flexColumn {
   display: flex;
   flex-direction: column;
-
-  &.spaceBetween {
-    justify-content: space-between;
-  }
 }
 
 .flexBox {

@@ -19,6 +19,21 @@ input[type=button] {
     background: var(--color5);
     color: white;
   }
+
+  &.active {
+    background-color:  var(--color5);
+
+    &:hover {
+      outline: 0.2em solid var(--color5);
+      background-color: white;
+      color: var(--color5);
+    }
+    
+    &:active {
+      background: var(--color5);
+      color: white;
+    }
+  }
   
   &.deleteButton {
     margin: 0;
