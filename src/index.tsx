@@ -16,7 +16,7 @@ layers.push(MapLayer);
 
 var RequestLayer = undefined; //createRequestLayer('publishingCountry=US&year=2000,2030');
 
-layers.push(new Layer([[3370533.758063, 8387091.147105]], creatIconStyle([0.5, 0.5], 0.05, './bin/imgs/cross_mark.png')));
+//layers.push(new Layer([[3370533.758063, 8387091.147105]], creatIconStyle([0.5, 0.5], 0.05, './bin/imgs/cross_mark.png')));
 
 const map = new LayerMap('map-container', [3370533.758063, 8387091.147105], 7, layers);
 

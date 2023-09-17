@@ -6,11 +6,13 @@ import { PushButton, ButtonValueType } from "./support";
 export enum ValueType {
   Text,
   // Args:
+  //   min: number,
+  //   max: number,
+  Number,
   Bool,
-  // Args:
   Toggle,
   // Args:
-  // elements: string[]
+  //   elements: string[]
 }
 
 export interface ValueProps {
@@ -42,6 +44,8 @@ class Setting extends React.Component<SettingProps, SettingState> {
     switch (this.props.valueProps.type) {
       case ValueType.Text:
         return (<input ref={this.state.valueRef} type="text" placeholder="value"/>);
+      case ValueType.Number:
+        return (<input ref={this.state.valueRef} type="number" min={this.props.valueProps.args.min} max={this.props.valueProps.args.max}/>);
       case ValueType.Bool:
         return (<PushButton ref={this.state.valueRef} name={this.props.name} valueType={ButtonValueType.EnabledDisabled}/>);
       case ValueType.Toggle:
@@ -59,6 +63,8 @@ class Setting extends React.Component<SettingProps, SettingState> {
     switch (this.props.valueProps.type) {
       case ValueType.Text:
         return this.state.valueRef.current.value as string;
+      case ValueType.Number:
+        return this.state.valueRef.current.valueAsNumber as number;
       case ValueType.Bool:
         return this.state.valueRef.current.getValue() as boolean; // tmp
       case ValueType.Toggle:
@@ -77,6 +83,9 @@ class Setting extends React.Component<SettingProps, SettingState> {
   componentDidMount(): void {
     switch (this.props.valueProps.type) {
       case ValueType.Text:
+        this.state.valueRef.current.value = this.props.value;
+        break;
+      case ValueType.Number:
         this.state.valueRef.current.value = this.props.value;
         break;
       case ValueType.Bool:

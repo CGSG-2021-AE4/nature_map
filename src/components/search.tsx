@@ -4,7 +4,7 @@ import { ValueList, ScrollBox } from "./support";
 import { getItemDetailsList, getTaxonData } from "./search_item";
 import { LayerMap, Layer, queryToStr } from "../layers";
 import { Settings, ValueType } from "./settings";
-
+import { makeReqStr, getJson } from "./request";
 // Request types
 
 export enum ReqType {
@@ -21,18 +21,19 @@ const defReqType = ReqType.Seach;
 
 // Data sets
 
-const datasets: { name: string , discription: string, key: string }[] = [
-  {
+const datasets: {[datasetName: string]: {name: string , discription: string, key: string }} = {
+  backbone: {
     name: 'GBIF Backbone Taxonomy',
     discription: 'default dataset (recomended)',
     key: 'd7dddbf4-2cf0-4f39-9b2a-bb099caae36c',
   },
-  {
+  advanced: {
     name: 'Advanced',
     discription: 'wide search without dataset',
     key: '',
   },
-];
+};
+
 const defaultDataSetInd = 0;
 
 // Search set data
@@ -40,12 +41,70 @@ const defaultDataSetInd = 0;
 interface SearchTypeSearchSetData {
   q: string,
   rank: TaxonRank,
-  datasetKey: string,
   higherTaxon: number | TaxonData,
 }
 
+const defaultSearchTypeSearchSetData: SearchTypeSearchSetData = {
+  q: '',
+  rank: TaxonRank.All,
+  higherTaxon: null,
+};
+
 interface SearchTypeByLinkSetData {
   link: string,
+}
+
+const defaultSearchTypeByLinkSetData: SearchTypeByLinkSetData = {
+  link: ''
+};
+
+// Settings
+
+const mapPointColors = [
+  'purpleHeat',
+  'blueHeat',
+  'orangeHeat',
+  'greenHeat',
+  'classic',
+  'purpleYellow',
+  'fire',
+  'glacier',
+];
+
+const mapPolyColors = [
+  'iNaturalist',
+  'purpleYellow',
+  'classic',
+  'green',
+  'green2',
+  'red',
+];
+
+const mapStyles = [
+  'point',
+  'poly',
+];
+
+console.log(Object(datasets).keys);
+
+var settingsValuesProps = {
+  advancedMode: { type: ValueType.Bool },
+  enableLinkLog: { type: ValueType.Bool },
+  searchLimit:  { type: ValueType.Number, args: { min: 1, max: 1000 } },
+  mapStyle: { type: ValueType.Toggle, args: { elements: mapStyles }},
+  mapPointColor: { type: ValueType.Toggle, args: { elements: mapPointColors }},
+  mapPolyColor: { type: ValueType.Toggle, args: { elements: mapPolyColors }},
+  dataset: { type: ValueType.Toggle, args: { elements: Object.keys(datasets) }},
+}
+
+interface SettingValues {
+  dataset: string;
+  advancedMode: boolean;
+  enableLinkLog: boolean;
+  searchLimit: number;
+  mapStyle: string;
+  mapPointColor: string;
+  mapPolyColor: string;
 }
 
 // Component interfaces
@@ -53,21 +112,6 @@ interface SearchTypeByLinkSetData {
 interface SearchProps {
   map: LayerMap;
 }
-
-var settingsValuesProps = {
-  enableLinkLog: { type: ValueType.Bool },
-  advancedMode: { type: ValueType.Bool },
-}
-
-interface SettingValues {
-  enableLinkLog: boolean,
-  advancedMode: boolean,
-}
-
-var settings: SettingValues = {
-  enableLinkLog: true,
-  advancedMode: true,
-};
 
 interface SearchState {
   searchResultsCount: number;
@@ -77,7 +121,6 @@ interface SearchState {
     search: {
       qRef: React.MutableRefObject<any>;
       rankRef: React.MutableRefObject<any>;
-      datasetRef: React.MutableRefObject<any>;
     },
     linkReq: {
       linkRef: React.MutableRefObject<any>;
@@ -87,20 +130,18 @@ interface SearchState {
   isSearched: boolean;
   chosenTaxon: TaxonData;
   isShowSettings: boolean;
+  settings: SettingValues;
 }/* End of 'SearchState' interface */ 
 
 export class Search extends React.Component<SearchProps, SearchState> {
   currentFocusItem: NameSearchItem;
   curSearchOffset: number;
-  searchLimit: number;
   curShowLayer: Layer = null;
-  settings: { support: boolean } = { support: false };
-  
+
   constructor( props: SearchProps ) {
     super(props);
     this.currentFocusItem = null;
     this.curSearchOffset = 0;
-    this.searchLimit = 100;
     this.state = {
       searchResults: [],
       searchResultsCount: 0,
@@ -109,7 +150,6 @@ export class Search extends React.Component<SearchProps, SearchState> {
         search: {
           qRef: createRef(),
           rankRef: createRef(),
-          datasetRef: createRef(),
         },
         linkReq: {
           linkRef: createRef(), 
@@ -119,6 +159,15 @@ export class Search extends React.Component<SearchProps, SearchState> {
       isSearched: false,
       chosenTaxon: null,
       isShowSettings: false,
+      settings: {
+        enableLinkLog: true,
+        advancedMode: true,
+        searchLimit: 100,
+        mapStyle: 'poly',
+        mapPointColor: 'purpleYellow',
+        mapPolyColor: 'purpleYellow',
+        dataset: 'backbone',
+      }
     }
   } /* End of 'constructor' function */ 
 
@@ -130,17 +179,19 @@ export class Search extends React.Component<SearchProps, SearchState> {
 
     const proj = 'EPSG:3857';
     const dataSource = 'https://api.gbif.org/v2/map/occurrence/density/{z}/{x}/{y}@';
-    const mapStyle = {
-      style: 'purpleYellow-noborder.poly',
+    const mapStyle = this.state.settings.mapStyle == 'poly' ? {
+      style: this.state.settings.mapPolyColor + '-noborder.poly',
       bin: 'square',
       squareSize: '8',
+    } : {
+      style: this.state.settings.mapPointColor + '.point',
     };
     const req = {
       taxonKey: data.key,
     };
 
     // Need to get dentisy
-    const count = await  Search.getJson('https://api.gbif.org/v1/occurrence/count?' + queryToStr({ ...req, }));
+    const count = await getJson('https://api.gbif.org/v1/occurrence/count?' + queryToStr({ ...req, }));
     // const cap = await  Search.getJson('https://api.gbif.org/v2/map/occurrence/density/capabilities.json?' + queryToStr({ ...req, }));
     // const area = (cap.maxLat - cap.minLat) * (cap.maxLng - cap.minLng);
     // console.log('Search...');
@@ -182,24 +233,6 @@ export class Search extends React.Component<SearchProps, SearchState> {
     }
   } /* End of 'makeSearchDataFromJson' function */ 
 
-  static async makeReqStr( type: ReqType, reqInData: any ) {
-    switch (type) {
-      case ReqType.Seach:
-        return `https://api.gbif.org/v1/species/search?${
-          reqInData.dataset != '' ? 'dataset_key=' + reqInData.dataset + '&': ''}${
-          reqInData.rank != 'ALL' ? 'rank=' + reqInData.rank + '&': ''}${
-          reqInData.offset != undefined ? 'offset=' + reqInData.offset + '&' : ''}${
-          reqInData.limit != undefined ? 'limit=' + reqInData.limit + '&' : ''}${
-          reqInData.higherTaxonKey != null ? 'highertaxon_key=' + reqInData.higherTaxonKey + '&': ''}q=${reqInData.q}`;
-      case ReqType.LinkReq:
-        return reqInData.link;
-    }
-  } /* End of 'makeReqStr' function */ 
-
-  static async getJson( url: string ) {
-    return fetch(url).then(res=>{ return res.json(); });
-  } /* End of 'getJson' function */ 
-
   clearSearch() {
     this.curSearchOffset = 0;
     this.setState({
@@ -216,8 +249,8 @@ export class Search extends React.Component<SearchProps, SearchState> {
         setData = {
           q: this.state.searchProps.search.qRef.current.value,
           rank: this.state.searchProps.search.rankRef.current.value,
-          datasetKey: this.state.searchProps.search.datasetRef.current.value,
           higherTaxon: this.state.chosenTaxon != null ? this.state.chosenTaxon.key : null,
+          settings: JSON.stringify(this.state.settings)
         } as SearchTypeSearchSetData;
         break;
       case ReqType.LinkReq:
@@ -235,31 +268,30 @@ export class Search extends React.Component<SearchProps, SearchState> {
     history.pushState(state, '', '?' + queryToStr(state));
   } /* End of 'updateHistoryState' function */
 
-  async search( searchLimit?: number ) {
+  async search() {
     var reqData;
+    var reqStr = "";
 
     switch (this.state.searchType) {
       case ReqType.Seach:
         reqData = {
-          higherTaxonKey: this.state.chosenTaxon != null ? this.state.chosenTaxon.key : null,
+          highertaxon_key: this.state.chosenTaxon != null ? this.state.chosenTaxon.key : undefined,
           q: this.state.searchProps.search.qRef.current.value,
           rank: this.state.searchProps.search.rankRef.current.value,
-          dataset: this.state.searchProps.search.datasetRef.current.value,
+          dataset_key: datasets[this.state.settings.dataset].key,
           offset: this.curSearchOffset,
-          limit: searchLimit != undefined ? searchLimit : this.searchLimit,
+          limit: this.state.settings.searchLimit,
         };
+        reqStr = await makeReqStr('https://api.gbif.org/v1/species/search', reqData);
         break;
       case ReqType.LinkReq:
-        reqData = {
-          link: this.state.searchProps.linkReq.linkRef.current.value
-        };
+        reqStr = this.state.searchProps.linkReq.linkRef.current.value;
         break;
     }
 
-    const reqStr = await Search.makeReqStr(this.state.searchType, reqData);
-    if (settings.enableLinkLog)
+    if (this.state.settings.enableLinkLog)
       console.log("Search request: " + reqStr);
-    const res = await Search.getJson(reqStr);
+    const res = await getJson(reqStr);
     this.setState({
       searchResults: [...this.state.searchResults, ...Search.makeSearchDataFromJson(this.state.searchType, res)],
       searchResultsCount: res.count,
@@ -282,7 +314,6 @@ export class Search extends React.Component<SearchProps, SearchState> {
       case ReqType.Seach:
         props = inProps as SearchTypeSearchSetData;
 
-        this.state.searchProps.search.datasetRef.current.value = props.datasetKey != undefined ? props.datasetKey : datasets[defaultDataSetInd].key;    // Dataset index
         this.state.searchProps.search.qRef.current.value = props.q;                     // Q
         this.state.searchProps.search.rankRef.current.value = props.rank; // Rank
      
@@ -313,11 +344,6 @@ export class Search extends React.Component<SearchProps, SearchState> {
       case ReqType.Seach:
         return (
           <>
-            Dataset: <select ref={this.state.searchProps.search.datasetRef} >
-              {datasets.map((e, i)=>{
-                  return (<option key={i} value={e.key}>{e.name} -- {e.discription}</option>);
-                })}
-            </select> <br/>
             Name: <input ref={this.state.searchProps.search.qRef} type="text"/> <br/>
             Rank: <select ref={this.state.searchProps.search.rankRef}>
               {taxonRanks.map((e, i)=>{
@@ -351,35 +377,50 @@ export class Search extends React.Component<SearchProps, SearchState> {
   render() {
     return (
       <>
-        <div className="flex0 fullMaxSize flexColumn" style={{
+        <div className="fullMaxSize flexColumn" style={{
           width: '30em',
         }}>
           <div className="padded gapped flex0 mainBg border1"> {/* Settings box */}
-            <h1>GBIF map</h1>
-            <input type="button" value="settings" onClick={()=>{
-              this.setState({ isShowSettings: true });
-            }}></input>
-            Type: <select value={this.state.searchType} onChange={(e)=>{
-              this.setState({ searchType: e.target.value as ReqType, isSearched: false, searchResults: []});
-            }}>
-              {reqTypes.map((e, i)=>{
-                return (<option key={i} value={e}>{e}</option>);
-              })}
-            </select>
+            <h1 style={{
+              userSelect: 'none',
+              background: 'var(--color3)',
+              paddingBlock: '0.2em',
+            }} onClick={()=>{
+              window.location.href = window.location.href.split('?')[0]; // CAN I??? *request without query
+            }}>GBIF map</h1>
+            <div className="flexRow spaceBetween alignCenter">
+              <div>
+                Type: <select value={this.state.searchType} onChange={(e)=>{
+                  this.setState({ searchType: e.target.value as ReqType, isSearched: false, searchResults: []});
+                }}>
+                  {reqTypes.map((e, i)=>{
+                    return (<option key={i} value={e}>{e}</option>);
+                  })}
+                </select>
+              </div>
+              <input type="button" value="settings" onClick={()=>{
+                this.setState({ isShowSettings: true });
+              }}/>
+            </div>
             <hr/>
             {this.renderSearchProps(this.state.searchType)}
             <hr/>
             <input type="button" value="search" onClick={()=>{
               this.clearSearch();
               // For quicker search
-              this.search(20);
+              const searchLimit = this.state.settings.searchLimit;
+
+              this.state.settings.searchLimit = 20;
+              this.search();
               if (!this.state.searchResultsIsEnd)
               {
                 this.curSearchOffset += 20;
-                this.search(80);
+                this.state.settings.searchLimit = searchLimit - 20;
+                this.search();
               }
+              this.state.settings.searchLimit = searchLimit;
             }}/>
-            {this.state.isSearched && <>Found {this.state.searchResultsCount} results.</>}
+            {this.state.isSearched && <> Found {this.state.searchResultsCount} results.</>}
           </div>
           <div className={`gapped flex1 mainBg ${this.state.isSearched ? "border1" : ""}`} style={{ overflowY: 'scroll' }}> {/* Search box */}
             <div>
@@ -389,7 +430,7 @@ export class Search extends React.Component<SearchProps, SearchState> {
                 })}
                 {this.state.searchResultsIsEnd == false && <div className="flexRow" style={{ margin: '0.6em' }}>
                   <input type="button" value="show more" className="gapped flex1" onClick={(e)=>{
-                    this.curSearchOffset += this.searchLimit;
+                    this.curSearchOffset += this.state.settings.searchLimit;
                     this.search();
                   }}/>
                 </div>}
@@ -415,10 +456,11 @@ export class Search extends React.Component<SearchProps, SearchState> {
           alignContent: 'center',
           background: '#00000082'
         }}>
-          <Settings<SettingValues> name="Settings" style={{ width: '20em'}} valuesProps={settingsValuesProps} values={settings} setSettingsCallBack={( newS: any )=>{
+          <Settings<SettingValues> name="Settings" style={{ width: '20em'}} valuesProps={settingsValuesProps} values={this.state.settings} setSettingsCallBack={( newS: any )=>{
             console.log("NEW SETTINGS ");
             console.log(newS);
-            settings = newS;
+            this.setState( {settings: newS });
+            this.updateHistoryState();
           }} closeCallBack={()=>{
             this.setState({ isShowSettings: false });
           }}/>
@@ -429,25 +471,30 @@ export class Search extends React.Component<SearchProps, SearchState> {
 
   componentDidMount() {
     //this.setSearchState(ReqType.LinkReq, { link: 'asdfjkhasdkhjasdfkhj'});
+    //console.log(JSON.parse(JSON.stringify({ a: this.state.settings} )));
+
     if (window.location.search == '')
       return;
 
     const urlParams = new URLSearchParams(window.location.search);
+
+    if (urlParams.get('settings') != undefined)
+      this.setState({ settings: JSON.parse(urlParams.get('settings'))});
+
     const type = urlParams.get('type') as ReqType;
     var setSearchData = null;
 
     switch (type) {
       case ReqType.Seach:
         setSearchData = {
-          q: urlParams.get('q'),
-          rank: urlParams.get('rank') as TaxonRank,
-          datasetKey: urlParams.get('datasetKey'),
-          higherTaxon: urlParams.get('higherTaxon') == 'null' ? null : parseInt(urlParams.get('higherTaxon')),
+          q: urlParams.get('q') != undefined ? urlParams.get('q') : defaultSearchTypeSearchSetData.q,
+          rank: urlParams.get('rank') != undefined ? urlParams.get('rank') as TaxonRank : defaultSearchTypeSearchSetData.rank,
+          higherTaxon: urlParams.get('higherTaxon') != undefined ? urlParams.get('higherTaxon') == 'null' ? null : parseInt(urlParams.get('higherTaxon')) : defaultSearchTypeSearchSetData.higherTaxon,
         } as SearchTypeSearchSetData;
         break;
       case ReqType.LinkReq:
         setSearchData = {
-          link: urlParams.get('link'),
+          link: urlParams.get('link') != undefined ? urlParams.get('link') : defaultSearchTypeByLinkSetData.link,
         } as SearchTypeByLinkSetData;
         break;
     }
